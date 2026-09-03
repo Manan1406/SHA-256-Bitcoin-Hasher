@@ -85,9 +85,9 @@ endfunction
 
 function logic [31:0] wnew();
   logic [31:0] s0, s1;
-  s0 = rightrotate(w[i-15], 7) ^ rightrotate(w[i-15], 18) ^ (w[i-15] >> 3);
-  s1 = rightrotate(w[i-2], 17) ^ rightrotate(w[i-2], 19) ^ (w[i-2] >> 10);
-  wnew = w[i-16] + s0 + w[i-7] + s1;
+  s0 = rightrotate(w[1], 7) ^ rightrotate(w[1], 18) ^ (w[1] >> 3);
+  s1 = rightrotate(w[14], 17) ^ rightrotate(w[14], 19) ^ (w[14] >> 10);
+  wnew = w[0] + s0 + w[9] + s1;
 endfunction
 
 // Generate request to memory
@@ -216,12 +216,20 @@ begin
     // move to WRITE stage
     COMPUTE: begin
 	    // 64 processing rounds steps for 512-bit block
-      if(i < 64) begin
+      if(i <= 64) begin
         if(i < 16) begin
           {a, b, c, d, e, f, g, h} <= {sha256_op(a, b, c, d, e, f, g, h, w[i], i)};
+        end else if(i == 16) begin
+          w[0] <= w[1]; w[1] <= w[2]; w[2] <= w[3]; w[3] <= w[4]; w[4] <= w[5];
+          w[5] <= w[6]; w[6] <= w[7]; w[7] <= w[8]; w[8] <= w[9]; w[9] <= w[10];
+          w[10] <= w[11]; w[11] <= w[12]; w[12] <= w[13]; w[13] <= w[14]; w[14] <= w[15];
+          w[15] <= wnew();
         end else begin
-          w[i] <= wnew;
-          {a, b, c, d, e, f, g, h} <= {sha256_op(a, b, c, d, e, f, g, h, wnew, i)};
+          w[0] <= w[1]; w[1] <= w[2]; w[2] <= w[3]; w[3] <= w[4]; w[4] <= w[5];
+          w[5] <= w[6]; w[6] <= w[7]; w[7] <= w[8]; w[8] <= w[9]; w[9] <= w[10];
+          w[10] <= w[11]; w[11] <= w[12]; w[12] <= w[13]; w[13] <= w[14]; w[14] <= w[15];
+          w[15] <= wnew();
+          {a, b, c, d, e, f, g, h} <= {sha256_op(a, b, c, d, e, f, g, h, w[15], i-1)};
         end
         i <= i + 1;
         state <= COMPUTE;
